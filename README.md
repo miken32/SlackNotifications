@@ -1,10 +1,8 @@
 # Slack MediaWiki
 
-This is a extension for [MediaWiki](https://www.mediawiki.org/wiki/MediaWiki) that sends notifications of actions in your Wiki like editing, adding or removing a page into [Slack](https://slack.com/) channel.
+This is a extension for [MediaWiki](https://www.mediawiki.org/wiki/MediaWiki) that sends notifications of actions in your wiki – like editing, adding, or removing a page – into a [Slack](https://slack.com/) channel.
 
 > Looking for extension that can send notifications to [HipChat](https://github.com/kulttuuri/hipchat_mediawiki) or [Discord](https://github.com/kulttuuri/discord_mediawiki)?
-
-![Screenshot](http://i.imgur.com/4SG64a3.jpg)
 
 ## Supported MediaWiki operations to send notifications
 
@@ -17,9 +15,7 @@ This is a extension for [MediaWiki](https://www.mediawiki.org/wiki/MediaWiki) th
 
 ## Requirements
 
-* [cURL](http://curl.haxx.se/). This extension also supports using `file_get_contents` for sending the data. See the configuration parameter `$wgSlackSendMethod` below to change this.
-* MediaWiki 1.8+ (tested with version 1.8, also tested and works with 1.25+)
-* Apache should have NE (NoEscape) flag on to prevent issues in URLs. By default you should have this enabled.
+* MediaWiki 1.26+
 
 ## How to install
 
@@ -27,41 +23,52 @@ This is a extension for [MediaWiki](https://www.mediawiki.org/wiki/MediaWiki) th
 
 2) After setting up the Webhook you will get a Webhook URL. Copy that URL as you will need it in step 4.
 
-3) [Download latest release of this extension](https://github.com/kulttuuri/slack_mediawiki/archive/master.zip), uncompress the archive and move folder `SlackNotifications` into your `mediawiki_installation/extensions` folder.
+3) Download latest release of this extension into your extensions directory.
 
 4) Add settings listed below in your `localSettings.php`. Note that it is mandatory to set these settings for this extension to work:
 
 ```php
-require_once("$IP/extensions/SlackNotifications/SlackNotifications.php");
+wfLoadExtension("SlackNotifications");
 // Required. Your Slack incoming webhook URL. Read more from here: https://api.slack.com/incoming-webhooks
 $wgSlackIncomingWebhookUrl = "";
-// Required. Name the message will appear to be sent from. Change this to whatever you wish it to be.
-$wgSlackFromName = $wgSitename;
-// URL into your MediaWiki installation with the trailing /.
-$wgWikiUrl		= "http://your_wiki_url/";
-// Wiki script name. Leave this to default one if you do not have URL rewriting enabled.
-$wgWikiUrlEnding = "index.php?title=";
-// What method will be used to send the data to Slack server. By default this is "curl" which only works if you have the curl extension enabled. This can be: "curl" or "file_get_contents". Default: "curl".
-$wgSlackSendMethod = "curl";
 ```
 
-5) Enjoy the notifications in your Slack room!
+5) Enjoy the notifications in your Slack channel!
 	
 ## Additional options
 
 These options can be set after including your plugin in your localSettings.php file.
 
-### Customize room where notifications gets sent to
+### Customize the channel where notifications gets sent to
 
-By default when you create incoming webhook at Slack site you'll define which room notifications go into. You can also override this in MediaWiki by setting the parameter below. Remember to also include # before your room name.
+By default, when you create an incoming Slack webhook, you'll define which channel notifications go into. You can also override this in MediaWiki by setting the parameter below. Remember to also include # before your channel name.
 
 ```php
+// What channel the webhook posts to
 $wgSlackRoomName = "";
+```
+
+### Set the webhook name
+
+The name of your wiki is used as the name the webook posts with. You can change this behaviour.
+
+```php
+// What name the webhook sends as
+$wgSlackFromName = $wgSiteName;
+```
+
+### Set the webhook avatar
+
+You also define an avatar for the webhook to post with when it's created, and you can also customize it with the setting below. Any valid Slack emoji can be used, including custom ones. The name must be surrounded by colons `:`.
+
+```php
+// What avatar the webhook uses for posts
+$wgSlackEmoji = "";
 ```
 
 ### Remove additional links from user and article pages
 
-By default user and article links in the nofication message will get additional links for ex. to block user, view article history etc. You can disable either one of those by setting settings below to false.
+By default user and article links in the nofication message will get additional links to block user, view article history, etc. You can disable either one of those by setting settings below to false.
 
 ```php
 // If this is true, pages will get additional links in the notification message (edit | delete | history).
@@ -70,22 +77,6 @@ $wgSlackIncludePageUrls = true;
 $wgSlackIncludeUserUrls = true;
 // If this is true, all minor edits made to articles will not be submitted to Slack.
 $wgSlackIgnoreMinorEdits = false;
-```
-
-### Set emoji for notification
-
-By default notification in Slack has the default emoji for notification. You can customize this with the setting below. You can find all available emojis from [here](http://www.webpagefx.com/tools/emoji-cheat-sheet/).
-
-```php
-$wgSlackEmoji = "";
-```
-
-### Show edit size
-
-By default we show size of the edit. You can hide this information with the setting below.
-
-```php
-$wgSlackIncludeDiffSize = false;
 ```
 
 ### Disable new user extra information
@@ -100,10 +91,17 @@ $wgSlackShowNewUserFullName = true;
 // If this is true, newly created user IP address is added to notification.
 $wgSlackShowNewUserIP = true;
 ```
+### Show edit size
+
+By default we show size of the edit. You can hide this information with the setting below.
+
+```php
+$wgSlackIncludeDiffSize = false;
+```
 
 ### Disable notifications from certain user roles
 
-By default notifications from all users will be sent to your Slack room. If you wish to exclude users in certain group to not send notification of any actions, you can set the group with the setting below.
+By default notifications from all users will be sent to your Slack channel. If you wish to exclude users in certain group to not send notification of any actions, you can set the group with the setting below. Then create the group if needed, and add users to it.
 
 ```php
 // If this is set, actions by users with this permission won't cause alerts
@@ -112,7 +110,7 @@ $wgExcludedPermission = "";
 
 ### Disable notifications from certain pages / namespaces
 
-You can exclude notifications from certain namespaces / articles by adding them into this array. Note: This targets all pages starting with the name.
+You can exclude notifications from certain pages by adding them into this array. Note: this is a simple substring prefix match that targets all pages. In the example below, all pages in the **User** namespace will be excluded, but also any pages whose names start with "User:".
 
 ```php
 // Actions (add, edit, modify) won't be notified to Slack room from articles starting with these names
@@ -141,23 +139,6 @@ $wgSlackNotificationFileUpload = true;
 // Article protection settings changed
 $wgSlackNotificationProtectedArticle = true;
 ```
-	
-## Additional MediaWiki URL Settings
-
-Should any of these default MediaWiki system page URLs differ in your installation, change them here.
-
-```php
-$wgWikiUrlEndingUserRights          = "Special%3AUserRights&user=";
-$wgWikiUrlEndingBlockUser           = "Special:Block/";
-$wgWikiUrlEndingUserPage            = "User:";
-$wgWikiUrlEndingUserTalkPage        = "User_talk:";
-$wgWikiUrlEndingUserContributions   = "Special:Contributions/";
-$wgWikiUrlEndingBlockList           = "Special:BlockList";
-$wgWikiUrlEndingEditArticle         = "action=edit";
-$wgWikiUrlEndingDeleteArticle       = "action=delete";
-$wgWikiUrlEndingHistory             = "action=history";
-$wgWikiUrlEndingDiff                = "diff=prev&oldid=";
-```
 
 ## Setting proxy
 
@@ -165,12 +146,8 @@ To add proxy for requests, you can use the normal MediaWiki way of setting proxy
 
 ## Contributors
 
-[@jacksga](https://github.com/jacksga) [@Meneth](https://github.com/Meneth)
+Based on code by [@kulttuuri](https://github.com/kulttuuri)
 
 ## License
 
 [MIT License](http://en.wikipedia.org/wiki/MIT_License)
-
-## Issues / Ideas / Comments
-
-Feel free to use the [Issues](https://github.com/kulttuuri/slack_mediawiki/issues) section on Github for this project to submit any issues / ideas / comments! :)

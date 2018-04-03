@@ -1,0 +1,50 @@
+{
+	"name": "Slack Notifications",
+	"version": "2.0",
+	"author": "Michael Newton<br/>Based on work by Aleksi Postari",
+	"url": "https://github.com/miken32/slack_mediawiki",
+	"description": "Sends Slack notifications for selected actions that have occurred in your MediaWiki sites.",
+	"type": "other",
+	"ConfigRegistry": {
+		"SlackNotifications": "GlobalVarConfig::newInstance"
+	},
+	"AutoloadClasses": {
+		"SlackNotifications": "SlackNotificationsCore.php"
+	},
+	"Hooks": {
+		"PageContentSaveComplete"  : ["SlackNotifications::articleSaved"],
+		"PageContentInsertComplete": ["SlackNotifications::articleInserted"],
+		"ArticleDeleteComplete"    : ["SlackNotifications::articleDeleted"],
+		"TitleMoveComplete"        : ["SlackNotifications::articleMoved"],
+		"AddNewAccount"            : ["SlackNotifications::newUserAccount"],
+		"BlockIpComplete"          : ["SlackNotifications::userBlocked"],
+		"UploadComplete"           : ["SlackNotifications::fileUploaded"],
+		"ArticleProtectComplete"   : ["SlackNotifications::articleProtected"]
+	},
+	"config": {
+		"SlackIncomingWebhookUrl": "",
+		"SlackFromName": "",
+		"SlackRoomName": "",
+		"SlackEmoji": "",
+		"SlackIncludePageUrls": true,
+		"SlackIncludeUserUrls": true,
+		"SlackIgnoreMinorEdits": false,
+		"SlackExcludeGroup": "",
+		"SlackExcludeNotificationsFrom": [],
+		"SlackExcludedTitles": [],
+		"SlackExcludedNamespaces": ["Mediawiki"],
+		"SlackNotificationNewUser": true,
+		"SlackNotificationBlockedUser": true,
+		"SlackNotificationAddedArticle": true,
+		"SlackNotificationRemovedArticle": true,
+		"SlackNotificationMovedArticle": true,
+		"SlackNotificationEditedArticle": true,
+		"SlackNotificationFileUpload": true,
+		"SlackNotificationProtectedArticle": true,
+		"SlackIncludeDiffSize": true,
+		"SlackShowNewUserEmail": true,
+		"SlackShowNewUserFullName": true,
+		"SlackShowNewUserIP": true
+	},
+	"manifest_version": 1
+}

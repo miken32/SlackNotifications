@@ -490,15 +490,6 @@ class SlackNotifications
             return;
         }
 
-        // Discard notifications from excluded pages
-        if (is_array($wgSlackExcludeNotificationsFrom)) {
-            foreach ($wgSlackExcludeNotificationsFrom as $currentExclude) {
-                if (0 === strpos($article->getTitle(), $currentExclude)) {
-                    return;
-                }
-            }
-        }
-
         foreach ($protect as $permission=>$groupname) {
             // if there's a restriction in place, the value is a group name
             if ($groupname) {

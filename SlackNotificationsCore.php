@@ -552,22 +552,6 @@ class SlackNotifications
             return;
         }
 
-        try {
-            $email = $user->getEmail();
-        } catch (Exception $e) {
-            $email = "";
-        }
-        try {
-            $realName = $user->getRealName();
-        } catch (Exception $e) {
-            $realName = "";
-        }
-        try {
-            $ipAddress = $user->getRequest()->getIP();
-        } catch (Exception $e) {
-            $ipAddress = "";
-        }
-
         $message = "A user was created";
         $attach[] = array(
             "fallback"   => sprintf("User %s was created", $user),
@@ -579,14 +563,20 @@ class SlackNotifications
             "ts"         => wfTimestamp(TS_UNIX, $user->getRegistration()),
         );
 
-        if ($wgSlackShowNewUserEmail && $email) {
-            $attach[0]["fields"][] = array("title" => "Email", "value" => $email, "short" => true);
+        if ($wgSlackShowNewUserEmail) {
+            try {
+                $attach[0]["fields"][] = array("title" => "Email", "value" => $user->getEmail(), "short" => true);
+            } catch (Exception $e) {}
         }
-        if ($wgSlackShowNewUserFullName && $realName) {
-            $attach[0]["fields"][] = array("title" => "Name", "value" => $realName, "short" => true);
+        if ($wgSlackShowNewUserFullName) {
+            try {
+                $attach[0]["fields"][] = array("title" => "Name", "value" => $user->getRealName(), "short" => true);
+            } catch (Exception $e) {}
         }
-        if ($wgSlackShowNewUserIP && $ipAddress) {
-            $attach[0]["fields"][] = array("title" => "IP", "value" => $ipAddress, "short" => true);
+        if ($wgSlackShowNewUserIP) {
+            try {
+                $attach[0]["fields"][] = array("title" => "IP", "value" => $user->getRequest()->getIP(), "short" => true);
+            } catch (Exception $e) {}
         }
 
         if ($wgSlackIncludeUserUrls) {

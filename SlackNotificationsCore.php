@@ -234,7 +234,7 @@ class SlackNotifications
             "title"      => $article->getTitle()->getFullText(),
             "title_link" => $article->getTitle()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $revision->getTimestamp())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $revision->getTimestamp()),
             "text"       => sprintf(
                 "Page was edited%s by %s %s\nSummary: %s",
                 ($isMinor ? " (minor)" : ""),
@@ -311,7 +311,7 @@ class SlackNotifications
             "title"      => $article->getTitle()->getFullText(),
             "title_link" => $article->getTitle()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $revision->getTimestamp())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $revision->getTimestamp()),
             "text"       => sprintf(
                 "Page was created by %s %s\nSummary: %s",
                 self::getSlackUserText($user),
@@ -373,7 +373,7 @@ class SlackNotifications
             "title"      => $article->getTitle()->getFullText(),
             "title_link" => $article->getTitle()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $logEntry->getTimestamp())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $logEntry->getTimestamp()),
             "text"       => sprintf(
                 "Page was deleted by %s\nReason: %s",
                 self::getSlackUserText($user),
@@ -440,7 +440,7 @@ class SlackNotifications
             "title"      => $title->getFullText(),
             "title_link" => $title->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $revision->getTimestamp())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $revision->getTimestamp()),
             "text"       => sprintf(
                 "Page was moved to %s by %s\nReason: %s",
                 self::getSlackTitleText($newTitle),
@@ -517,7 +517,7 @@ class SlackNotifications
             "title"      => $article->getTitle()->getFullText(),
             "title_link" => $article->getTitle()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $article->getRevision()->getTimestamp())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $article->getRevision()->getTimestamp()),
             "text"       => sprintf(
                 "Page had protection %s by %s\nReason: %s",
                 $isProtecting ? "changed" : "removed",
@@ -588,7 +588,7 @@ class SlackNotifications
             "title_link" => $user->getUserPage->getFullUrl(),
             "text"       => sprintf("New user account was created"),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $user->getRegistration())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $user->getRegistration()),
         );
 
         if ($wgSlackShowNewUserEmail && $email) {
@@ -641,7 +641,7 @@ class SlackNotifications
             "title"      => $image->getLocalFile()->getTitle()->getFullText(),
             "title_link" => $image->getLocalFile()->getTitle()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $image->getLocalFile()->getTimestamp())->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $image->getLocalFile()->getTimestamp()),
             "text"       => sprintf(
                 "File was uploaded by %s\nSummary: %s",
                 self::getSlackUserText($user),
@@ -707,7 +707,7 @@ class SlackNotifications
             "title"      => $block->getTarget()->getName(),
             "title_link" => $block->getTarget()->getUserPage()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => DateTime::createFromFormat("YmdHis", $block->mTimestamp)->format("U"),
+            "ts"         => wfTimestamp(TS_UNIX, $block->mTimestamp),
             "text"       => sprintf(
                 "User was blocked by %s\nReason: %s.",
                 self::getSlackUserText($user),

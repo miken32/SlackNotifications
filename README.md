@@ -39,6 +39,13 @@ $wgSlackIncomingWebhookUrl = "";
 
 These options can be set after including your plugin in your localSettings.php file.
 
+### Options changed from version 1.x
+
+* The setting `ExcludedPermission` was removed and replaced with `SlackExcludeGroup` to follow Mediawiki naming guidelines.
+* The setting `SlackExcludeNotificationsFrom` was deprecated and replaced with `SlackExcludedTitles` and `SlackExcludedNamespaces` to allow for better control over exclusions.
+* The `WikiUrl*` settings are no longer needed, as the URLs are better determined by Mediawiki's built-in functions.
+* The setting `SlackSendMethod` was removed, the method is now determined automatically. You ***must*** ensure that your server's certificate trust stores are configured properly; it's ***highly*** insecure to disable certificate verification, and no longer possible in modern versions of PHP.
+
 ### Customize the channel where notifications gets sent to
 
 By default, when you create an incoming Slack webhook, you'll define which channel notifications go into. You can also override this in MediaWiki by setting the parameter below. Remember to also include # before your channel name.
@@ -105,11 +112,21 @@ By default notifications from all users will be sent to your Slack channel. If y
 
 ```php
 // If this is set, actions by users with this permission won't cause alerts
-$wgExcludedPermission = "";
+$wgSlackExcludeGroup = "";
 ```
 
 ### Disable notifications from certain pages / namespaces
 
+There are 2 options to suppress notifications from certain pages. One is a simple substring prefix match on the page title (not including namespace) and the other matches the namespace of the page. Default values are shown below.
+
+```php
+// Prefix match on page titles only
+$wgSlackExcludedTitles = [];
+// Match on full namespace
+$wgSlackExcludedNamespaces = ["Mediawiki"];
+```
+
+#### Deprecated setting
 You can exclude notifications from certain pages by adding them into this array. Note: this is a simple substring prefix match that targets all pages. In the example below, all pages in the **User** namespace will be excluded, but also any pages whose names start with "User:".
 
 ```php

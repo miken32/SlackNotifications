@@ -68,10 +68,9 @@ class SlackNotifications
                 $user->getTalkPage()->getFullUrl(),
                 $contrib->getPageTitle()->getFullUrl() . "/" . urlencode($user)
             );
-        } else {
-            $title = $user->getUserPage();
-            return sprintf("<%s|%s>", $title->getFullUrl(), $user);
         }
+        $title = $user->getUserPage();
+        return sprintf("<%s|%s>", $title->getFullUrl(), $user);
     }
 
     /**
@@ -100,9 +99,8 @@ class SlackNotifications
                 );
             }
             return $out;
-        } else {
-            return sprintf("<%s|%s>", $title->getFullUrl(), $title->getFullText());
         }
+        return sprintf("<%s|%s>", $title->getFullUrl(), $title->getFullText());
     }
 
     /**
@@ -120,9 +118,8 @@ class SlackNotifications
                 $title->getFullUrl(array("action"=>"delete")),
                 $title->getFullUrl(array("action"=>"history"))
             );
-        } else {
-            return sprintf("<%s|%s>", $title->getFullUrl(), $title->getFullText());
         }
+        return sprintf("<%s|%s>", $title->getFullUrl(), $title->getFullText());
     }
 
     /**
@@ -788,9 +785,6 @@ class SlackNotifications
             ));
             curl_exec($h);
             curl_close($h);
-        } else {
-            // no way to send the notification
-            return false;
         }
     }
 }

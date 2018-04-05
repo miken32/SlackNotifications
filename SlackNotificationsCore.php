@@ -70,7 +70,11 @@ class SlackNotifications
             );
         }
         $title = $user->getUserPage();
-        return sprintf("<%s|%s>", $title->getFullUrl(), $user);
+        $output = sprintf("<%s|%s>", $title->getFullUrl(), $user);
+        if ($wgSlackUsersAreWikiUsers) {
+            $output .= " (<@$user>)";
+        }
+        return $output;
     }
 
     /**

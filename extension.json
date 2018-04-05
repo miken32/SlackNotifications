@@ -44,7 +44,8 @@
 		"SlackIncludeDiffSize": true,
 		"SlackShowNewUserEmail": true,
 		"SlackShowNewUserFullName": true,
-		"SlackShowNewUserIP": true
+		"SlackShowNewUserIP": true,
+		"SlackUsersAreWikiUsers" false
 	},
 	"manifest_version": 1
 }

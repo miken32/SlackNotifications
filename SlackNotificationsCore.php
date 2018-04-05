@@ -69,9 +69,11 @@ class SlackNotifications
                 $contrib->getPageTitle()->getFullUrl() . "/" . urlencode($user)
             );
         }
-        $title = $user->getUserPage();
-        $output = sprintf("<%s|%s>", $title->getFullUrl(), $user);
-        if ($wgSlackUsersAreWikiUsers) {
+        $config     = self::getExtConfig();
+        $wgSlackAts = $config->get("SlackUsersAreWikiUsers");
+        $title      = $user->getUserPage();
+        $output     = sprintf("<%s|%s>", $title->getFullUrl(), $user);
+        if ($wgSlackAts) {
             $output .= " (<@$user>)";
         }
         return $output;

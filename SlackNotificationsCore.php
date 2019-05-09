@@ -636,7 +636,7 @@ class SlackNotifications
 
         if (!$file->isExpensiveToThumbnail()) {
             $thumb_url = $file->getThumbnails()[0];
-            $thumb_file = $this->resolveVirtualURL($thumb_url);
+            $thumb_file = self::resolveVirtualURL($thumb_url, $file);
             if ($thumb_file && file_exists($thumb_file)) {
                 $attach[0]["thumb_url"] = sprintf(
                     "data:%s;base64,%s",
@@ -788,7 +788,7 @@ class SlackNotifications
         }
     }
 
-    private function resolveVirtualURL($url)
+    private static function resolveVirtualURL($url, $file)
     {
         $u = parse_url($url);
         if (
@@ -797,8 +797,7 @@ class SlackNotifications
         ) {
             return false;
         }
-        list(, $zone, $path) = explode("/", $u["path"], 3);
-        $base = $this->getZonePath($zone);
-        return $base ? $base . "/" . rawurldecode($path) : false;
+        $path = $file->getRepo()->getLocalReference($url);
+        return $path ? $path : false;
     }
 }

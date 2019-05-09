@@ -613,29 +613,42 @@ class SlackNotifications
             return;
         }
 
-        $user = $image->getLocalFile()->getUser("object");
+        $file = $image->getLocalFile();
+        $user = $file->getUser("object");
         if (is_numeric($user)) {
             $user = User::newFromId($user);
         }
 
         $message = "A file was uploaded";
         $attach[] = array(
-            "fallback"   => sprintf("%s has uploaded %s", $user, $image->getLocalFile()->getTitle()->getFullText()),
+            "fallback"   => sprintf("%s has uploaded %s", $user, $file->getTitle()->getFullText()),
             "color"      => self::GREEN,
-            "title"      => $image->getLocalFile()->getTitle()->getFullText(),
-            "title_link" => $image->getLocalFile()->getTitle()->getFullUrl(),
+            "title"      => $file->getTitle()->getFullText(),
+            "title_link" => $file->getTitle()->getFullUrl(),
             "fields"     => array(),
-            "ts"         => wfTimestamp(TS_UNIX, $image->getLocalFile()->getTimestamp()),
+            "ts"         => wfTimestamp(TS_UNIX, $file->getTimestamp()),
             "text"       => sprintf(
                 "File was uploaded by %s\nSummary: %s",
                 self::getSlackUserText($user),
-                $image->getLocalFile()->getDescription() ? "_" . $image->getLocalFile()->getDescription() . "_" : "none given"
+                $file->getDescription() ? "_" . $file->getDescription() . "_" : "none given"
             ),
         );
 
-        $attach[0]["fields"][] = array("title" => "Type", "short" => "true", "value" => $image->getLocalFile()->getMimeType());
+        if (!$file->isExpensiveToThumbnail()) {
+            $thumb_url = $file->getThumbnails()[0];
+            $thumb_file = $this->resolveVirtualURL($thumb_url);
+            if ($thumb_file && file_exists($thumb_file)) {
+                $attach[0]["thumb_url"] = sprintf(
+                    "data:%s;base64,%s",
+                    $file->getMimeType(),
+                    base64_encode(file_get_contents($thumb_file))
+                );
+            }
+        }
 
-        $size = $image->getLocalFile()->size;
+        $attach[0]["fields"][] = array("title" => "Type", "short" => "true", "value" => $file->getMimeType());
+
+        $size = $file->size;
         if ($size > 1024 * 1024 * 1024) {
             $size = sprintf("%f GB", round($size / 1024 / 1024 / 1024, 2));
         } elseif ($size > 1024 * 1024) {
@@ -773,5 +786,19 @@ class SlackNotifications
             curl_exec($h);
             curl_close($h);
         }
+    }
+
+    private function resolveVirtualURL($url)
+    {
+        $u = parse_url($url);
+        if (
+            empty($u["scheme"]) || $u["scheme"] !== "mwstore" ||
+            empty($u["host"]) || $u["host"] !== "local-backend")
+        ) {
+            return false;
+        }
+        list(, $zone, $path) = explode("/", $u["path"], 3);
+        $base = $this->getZonePath($zone);
+        return $base ? $base . "/" . rawurldecode($path) : false;
     }
 }

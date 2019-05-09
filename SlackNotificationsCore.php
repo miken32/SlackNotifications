@@ -792,8 +792,8 @@ class SlackNotifications
     {
         $u = parse_url($url);
         if (
-            empty($u["scheme"]) || $u["scheme"] !== "mwstore" ||
-            empty($u["host"]) || $u["host"] !== "local-backend")
+            (empty($u["scheme"]) || $u["scheme"] !== "mwstore") ||
+            (empty($u["host"])   || $u["host"]   !== "local-backend")
         ) {
             return false;
         }

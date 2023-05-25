@@ -126,6 +126,17 @@ $wgSlackExcludedTitles = [];
 $wgSlackExcludedNamespaces = ["Mediawiki"];
 ```
 
+### Enable notifications **only** from certain pages / namespaces
+
+There are 2 options to limit notifications to only be from certain pages. One is a simple substring prefix match on the page title (not including namespace) and the other matches the namespace of the page. This feature works together with the exclusion settings above. The default value (both arrays empty) means this feature is disabled.
+
+```php
+// Prefix match on page titles only
+$wgSlackExcludedTitles = [];
+// Match on full namespace
+$wgSlackExcludedNamespaces = [];
+```
+
 #### Deprecated setting
 You can exclude notifications from certain pages by adding them into this array. Note: this is a simple substring prefix match that targets all pages. In the example below, all pages in the **User** namespace will be excluded, but also any pages whose names start with "User:".
 

@@ -181,6 +181,46 @@ class SlackNotifications
     }
 
     /**
+     * Determines if a title is a prefix match for an entry in the included list
+     * @param string $title The page title
+     * @return boolean Whether the title matched the list
+     */
+    private static function isIncluded(Title $title)
+    {
+        $config = self::getExtConfig();
+        $nspace = $title->getNsText();
+        $spaces = $config->get("SlackIncludedNamespaces");
+        if (is_array($spaces) && count($spaces) > 0) {
+            $result = array_filter(
+                $spaces,
+                function ($v) use ($nspace) {
+                    return strcmp($nspace, $v) === 0;
+                }
+            );
+            if (count($result)) {
+                return true;
+            }
+        }
+
+        $btitle = $title->getBaseText();
+        $titles = $config->get("SlackIncludedTitles");
+        if (is_array($titles) && count($titles) > 0) {
+            $result = array_filter(
+                $titles,
+                function ($v) use ($btitle) {
+                    return strpos($btitle, $v) === 0;
+                }
+            );
+            if (count($result)) {
+                return true;
+            }
+        }
+
+        // default to true if no entries given
+        return count($spaces) === 0 && count($titles) === 0;
+    }
+
+    /**
      * Occurs after the save page request has been processed.
      * @param WikiPage $article The page object that was updated
      * @param User $user The user making the change
@@ -222,6 +262,7 @@ class SlackNotifications
         if (
             !$wgSlackNotificationEditedArticle ||
             self::isExcluded($article->getTitle()) ||
+            !self::isIncluded($article->getTitle()) ||
             // Skip new articles, minor edits, or null revisions (eg protecting articles)
             (int)$status->value['new'] === 1 ||
             ($isMinor && $wgSlackIgnoreMinorEdits) ||
@@ -301,6 +342,7 @@ class SlackNotifications
         if (
             !$wgSlackNotificationAddedArticle ||
             self::isExcluded($article->getTitle()) ||
+            !self::isIncluded($article->getTitle()) ||
             // Do not announce newly added file uploads as articles...
             $article->getTitle()->getNsText() === "File"
         ) {
@@ -365,7 +407,11 @@ class SlackNotifications
         $wgSlackIncludeUserUrls            = $config->get("SlackIncludeUserUrls");
         $wgSlackNotificationRemovedArticle = $config->get("SlackNotificationRemovedArticle");
 
-        if (!$wgSlackNotificationRemovedArticle || self::isExcluded($article->getTitle())) {
+        if (
+            !$wgSlackNotificationRemovedArticle ||
+            self::isExcluded($article->getTitle()) ||
+            !self::isIncluded($article->getTitle())
+        ) {
             return;
         }
 
@@ -431,7 +477,9 @@ class SlackNotifications
         if (
             !$wgSlackNotificationMovedArticle ||
             self::isExcluded($title) ||
-            self::isExcluded($newTitle)
+            self::isExcluded($newTitle) ||
+            !self::isIncluded($title) ||
+            !self::isIncluded($newTitle)
         ) {
             return;
         }
@@ -492,7 +540,11 @@ class SlackNotifications
         $wgSlackIncludeUserUrls              = $config->get("SlackIncludeUserUrls");
         $wgSlackNotificationProtectedArticle = $config->get("SlackNotificationProtectedArticle");
 
-        if (!$wgSlackNotificationProtectedArticle || self::isExcluded($article->getTitle())) {
+        if (
+            !$wgSlackNotificationProtectedArticle ||
+            self::isExcluded($article->getTitle()) ||
+            !self::isIncluded($article->getTitle())
+        ) {
             return;
         }
 
@@ -609,7 +661,11 @@ class SlackNotifications
         $wgSlackIncludeUserUrls        = $config->get("SlackIncludeUserUrls");
         $wgSlackNotificationFileUpload = $config->get("SlackNotificationFileUpload");
 
-        if (!$wgSlackNotificationFileUpload || self::isExcluded($image->getLocalFile()->getTitle())) {
+        if (
+            !$wgSlackNotificationFileUpload ||
+            self::isExcluded($image->getLocalFile()->getTitle()) ||
+            !self::isIncluded($image->getLocalFile()->getTitle())
+        ) {
             return;
         }
 

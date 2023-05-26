@@ -252,6 +252,7 @@ class SlackNotifications
         RevisionRecord $revision,
         EditResult $result
     ) {
+        self::log("Entering SlackNotificationsCore::articleSaved()");
         $config                           = self::getExtConfig();
         $wgSlackIncludeDiffSize           = $config->get("SlackIncludeDiffSize");
         $wgSlackIncludePageUrls           = $config->get("SlackIncludePageUrls");
@@ -318,6 +319,7 @@ class SlackNotifications
             );
         }
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::articleSaved()");
     }
 
     /**
@@ -340,6 +342,7 @@ class SlackNotifications
         ManualLogEntry $logEntry,
         int $archivedRevCount
     ) {
+        self::log("Entering SlackNotificationsCore::articleDeleted()");
         $config                            = self::getExtConfig();
         $wgSlackIncludePageUrls            = $config->get("SlackIncludePageUrls");
         $wgSlackIncludeUserUrls            = $config->get("SlackIncludeUserUrls");
@@ -385,6 +388,7 @@ class SlackNotifications
         }
 
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::articleDeleted()");
     }
 
     /**
@@ -408,6 +412,7 @@ class SlackNotifications
         $reason = null,
         RevisionRecord $revision
     ) {
+        self::log("Entering SlackNotificationsCore::articleMoved()");
         $config                           = self::getExtConfig();
         $wgSlackIncludePageUrls           = $config->get("SlackIncludePageUrls");
         $wgSlackIncludeUserUrls           = $config->get("SlackIncludeUserUrls");
@@ -459,6 +464,7 @@ class SlackNotifications
         }
 
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::articleMoved()");
     }
 
     /**
@@ -478,6 +484,7 @@ class SlackNotifications
         $reason,
         $moveOnly = false
     ) {
+        self::log("Entering SlackNotificationsCore::articleProtected()");
         $config                              = self::getExtConfig();
         $wgSlackIncludePageUrls              = $config->get("SlackIncludePageUrls");
         $wgSlackIncludeUserUrls              = $config->get("SlackIncludeUserUrls");
@@ -531,6 +538,7 @@ class SlackNotifications
         }
 
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::articleProtected()");
     }
 
     /**
@@ -542,6 +550,7 @@ class SlackNotifications
      */
     public static function newUserAccount(User $user, bool $autoCreated)
     {
+        self::log("Entering SlackNotificationsCore::newUserAccount()");
         $config                     = self::getExtConfig();
         $wgSlackShowNewUserIP       = $config->get("SlackShowNewUserIP");
         $wgSlackIncludeUserUrls     = $config->get("SlackIncludeUserUrls");
@@ -589,6 +598,7 @@ class SlackNotifications
         }
 
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::newUserAccount()");
     }
 
     /**
@@ -599,6 +609,7 @@ class SlackNotifications
      */
     public static function fileUploaded(UploadBase $image)
     {
+        self::log("Entering SlackNotificationsCore::fileUploaded()");
         $config                        = self::getExtConfig();
         $wgSlackIncludePageUrls        = $config->get("SlackIncludePageUrls");
         $wgSlackIncludeUserUrls        = $config->get("SlackIncludeUserUrls");
@@ -676,6 +687,7 @@ class SlackNotifications
         }
 
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::fileUpload()");
     }
 
     /**
@@ -687,6 +699,7 @@ class SlackNotifications
      */
     public static function userBlocked(Block $block, User $user)
     {
+        self::log("Entering SlackNotificationsCore::userBlocked()");
         $config                         = self::getExtConfig();
         $wgSlackIncludeUserUrls         = $config->get("SlackIncludeUserUrls");
         $wgSlackNotificationBlockedUser = $config->get("SlackNotificationBlockedUser");
@@ -724,6 +737,7 @@ class SlackNotifications
             );
         }
         self::sendNotification($message, $user, $attach);
+        self::log("Exiting SlackNotificationsCore::userBlocked()");
     }
 
     /**
@@ -737,6 +751,7 @@ class SlackNotifications
      */
     private static function sendNotification($message, User $user, $attach = array())
     {
+        self::log("Entering SlackNotificationsCore::sendNotification()");
         $mwConfig = self::getMwConfig();
         $config   = self::getExtConfig();
 
@@ -760,6 +775,7 @@ class SlackNotifications
             "attachments" => $attach,
         );
         $postData = json_encode($postData);
+        self::log("Post data: $postData");
 
         if (ini_get("allow_url_fopen")) {
             $options = array(
@@ -785,6 +801,7 @@ class SlackNotifications
             curl_exec($h);
             curl_close($h);
         }
+        self::log("Exiting SlackNotificationsCore::sendNotification()");
     }
 
     private static function resolveVirtualURL($url, $file)

@@ -1,5 +1,12 @@
 <?php
+
+use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MediaWikiServices;
+use MediaWiki\Page\ProperPageIdentity;
+use MediaWiki\Permissions\Authority;
+use MediaWiki\Revision\RevisionRecord;
+use MediaWiki\Storage\EditResult;
+use MediaWiki\User\UserIdentity;
 
 class SlackNotifications
 {
@@ -98,7 +105,7 @@ class SlackNotifications
                 $title->getFullUrl(array("action"=>"history"))
             );
             if ($diff) {
-                $revid = $article->getRevision()->getID();
+                $revid = $article->getRevisionRecord()->getID();
                 $out .= sprintf(
                     " | <%s|diff>",
                     $title->getFullUrl(array("type"=>"revision", "diff"=>$revid))
@@ -220,36 +227,30 @@ class SlackNotifications
         return count($spaces) === 0 && count($titles) === 0;
     }
 
+    private static function log(string $message)
+    {
+        MWDebug::init();
+        MWDebug::log($message);
+    }
+
     /**
      * Occurs after the save page request has been processed.
      * @param WikiPage $article The page object that was updated
-     * @param User $user The user making the change
-     * @param Content $content The new page content
+     * @param UserIdentity $user The user making the change
      * @param string $summary The edit summary
-     * @param bool $isMinor Whether the edit was marked as minor
-     * @param bool $isWatch Whether the editor is now watching the page
-     * @param null $section Not used
      * @param int $flags Bitfield of options
-     * @param Revision $revision The revision object created by the edit
-     * @param Status $status The status object yet to be returned
-     * @param int $baseRevId The revision ID the change was based on
-     * @param int $undidRevId The revision ID this change undid, if any
+     * @param RevisionRecord $revision The revision object created by the edit
+     * @param EditResult $result The result of the edit
      * @return void
-     * @see https://www.mediawiki.org/wiki/Manual:Hooks/PageContentSaveComplete
+     * @see https://www.mediawiki.org/wiki/Manual:Hooks/PageSaveComplete
      */
     public static function articleSaved(
         WikiPage $article,
-        User $user,
-        Content $content,
-        $summary,
-        $isMinor,
-        $isWatch,
-        $section,
-        $flags,
-        Revision $revision,
-        Status $status,
-        $baseRevId,
-        $undidRevId = 0
+        UserIdentity $user,
+        string $summary,
+        int $flags,
+        RevisionRecord $revision,
+        EditResult $result
     ) {
         $config                           = self::getExtConfig();
         $wgSlackIncludeDiffSize           = $config->get("SlackIncludeDiffSize");
@@ -258,34 +259,45 @@ class SlackNotifications
         $wgSlackIgnoreMinorEdits          = $config->get("SlackIgnoreMinorEdits");
         $wgSlackNotificationEditedArticle = $config->get("SlackNotificationEditedArticle");
 
+        $user = User::newFromIdentity($user);
+        $isMinor = $flags & \EDIT_MINOR;
+        $isNew = $result->isNew();
+        $prevRev = MediaWikiServices::getInstance()->getRevisionLookup()->getPreviousRevision($revision);
 
         if (
             !$wgSlackNotificationEditedArticle ||
             self::isExcluded($article->getTitle()) ||
             !self::isIncluded($article->getTitle()) ||
-            // Skip new articles, minor edits, or null revisions (eg protecting articles)
-            (int)$status->value['new'] === 1 ||
+            // Skip minor edits, or null revisions (eg protecting articles)
             ($isMinor && $wgSlackIgnoreMinorEdits) ||
-            $article->getRevision()->getPrevious() === null
+            $result->isNullEdit() ||
+            // Do not announce newly added file uploads as articles...
+            ($isNew && $article->getTitle()->getNsText() === "File")
         ) {
             return;
         }
 
-        $message = "A page was updated";
+        $message = sprintf("A page was %s", $isNew ? "created" : "updated");
         $attach[] = array(
-            "fallback"   => sprintf("%s has edited %s", $user, $article->getTitle()->getFullText()),
-            "color"      => self::YELLOW,
+            "fallback"   => sprintf(
+                "%s has %s %s",
+                $user,
+                $isNew ? "created" : "updated",
+                $article->getTitle()->getFullText()
+            ),
+            "color"      => $isNew ? self::GREEN : self::YELLOW,
             "title"      => $article->getTitle()->getFullText(),
             "title_link" => $article->getTitle()->getFullUrl(),
             "fields"     => array(),
             "ts"         => wfTimestamp(TS_UNIX, $revision->getTimestamp()),
             "text"       => sprintf(
-                "Page was edited%s by %s %s\nSummary: %s",
-                ($isMinor ? " (minor)" : ""),
+                "Page was %s%s by %s %s\nSummary: %s",
+                $isNew ? "created" : "edited",
+                (!$isNew && $isMinor ? " (minor)" : ""),
                 self::getSlackUserText($user),
                 (
                     $wgSlackIncludeDiffSize ?
-                    sprintf("(%+d bytes change)", $revision->getSize() - $revision->getPrevious()->getSize()) :
+                    sprintf("(%+d bytes%s)", $revision->getSize() - $prevRev->getSize(), $isNew ? "" : " change") :
                     ""
                 ),
                 $summary ? "_{$summary}_" : "none provided"
@@ -309,104 +321,31 @@ class SlackNotifications
     }
 
     /**
-     * Occurs after a new article has been created.
-     * @param WikiPage $article The new page object
-     * @param User $user The user that created the page
-     * @param Content $text The new page's content object
-     * @param string $summary The new page summary
-     * @param bool $isMinor Whether the page creation was marked as a minor edit
-     * @param bool $isWatch Whether the page creator is watching the new page
-     * @param null $section Not used
-     * @param int $flags Bitfield of options
-     * @param Revision $revision The revision object created by the new page
-     * @return void
-     * @see http://www.mediawiki.org/wiki/Manual:Hooks/ArticleInsertComplete
-     */
-    public static function articleInserted(
-        WikiPage $article,
-        User $user,
-        Content $text,
-        $summary,
-        $isMinor,
-        $isWatch,
-        $section,
-        $flags,
-        Revision $revision
-    ) {
-        $config                           = self::getExtConfig();
-        $wgSlackIncludeDiffSize           = $config->get("SlackIncludeDiffSize");
-        $wgSlackIncludePageUrls           = $config->get("SlackIncludePageUrls");
-        $wgSlackIncludeUserUrls           = $config->get("SlackIncludeUserUrls");
-        $wgSlackNotificationAddedArticle  = $config->get("SlackNotificationAddedArticle");
-
-        if (
-            !$wgSlackNotificationAddedArticle ||
-            self::isExcluded($article->getTitle()) ||
-            !self::isIncluded($article->getTitle()) ||
-            // Do not announce newly added file uploads as articles...
-            $article->getTitle()->getNsText() === "File"
-        ) {
-            return;
-        }
-
-        $message = "A page was created";
-        $attach[] = array(
-            "fallback"   => sprintf("%s has created %s", $user, $article->getTitle()->getFullText()),
-            "color"      => self::GREEN,
-            "title"      => $article->getTitle()->getFullText(),
-            "title_link" => $article->getTitle()->getFullUrl(),
-            "fields"     => array(),
-            "ts"         => wfTimestamp(TS_UNIX, $revision->getTimestamp()),
-            "text"       => sprintf(
-                "Page was created by %s %s\nSummary: %s",
-                self::getSlackUserText($user),
-                $wgSlackIncludeDiffSize ? sprintf("(%+d bytes)", $revision->getSize()) : "",
-                $summary ? "_{$summary}_" : "none provided"
-            ),
-        );
-
-        if ($wgSlackIncludePageUrls) {
-            $attach[0]["fields"][] = array(
-                "title" => "Page Links",
-                "short" => "true",
-                "value" => self::getSlackArticleText($article, true, true),
-            );
-        }
-        if ($wgSlackIncludeUserUrls) {
-            $attach[0]["fields"][] = array(
-                "title" => "User Links",
-                "short" => "true",
-                "value" => self::getSlackUserText($user, true),
-            );
-        }
-
-        self::sendNotification($message, $user, $attach);
-    }
-
-    /**
-     * Occurs after the delete article request has been processed.
-     * @param WikiPage $article The page that was deleted
-     * @param User $user The user that performed the deletion
+     * Occurs after the delete page request has been processed.
+     * @param ProperPageIdentity $article The page that was deleted
+     * @param Authority $deleter The user that performed the deletion
      * @param string $reason The reason given for the deletion
      * @param int $id The database ID of the deleted page
-     * @param Content $content The deleted page content or null on error
-     * @param LogEntry $logEntry The log entry recording the deletion
+     * @param RevisionRecord $rev The deleted page revision
+     * @param ManualLogEntry $logEntry The log entry recording the deletion
      * @return void
-     * @see http://www.mediawiki.org/wiki/Manual:Hooks/ArticleDeleteComplete
+     * @see http://www.mediawiki.org/wiki/Manual:Hooks/PageDeleteComplete
      */
     public static function articleDeleted(
-        WikiPage $article,
-        User $user,
-        $reason,
-        $id,
-        Content $content,
-        LogEntry $logEntry
+        ProperPageIdentity $article,
+        Authority $deleter,
+        string $reason,
+        int $id,
+        RevisionRecord $rev,
+        ManualLogEntry $logEntry,
+        int $archivedRevCount
     ) {
         $config                            = self::getExtConfig();
         $wgSlackIncludePageUrls            = $config->get("SlackIncludePageUrls");
         $wgSlackIncludeUserUrls            = $config->get("SlackIncludeUserUrls");
         $wgSlackNotificationRemovedArticle = $config->get("SlackNotificationRemovedArticle");
 
+        $user = $deleter->getUser();
         if (
             !$wgSlackNotificationRemovedArticle ||
             self::isExcluded($article->getTitle()) ||
@@ -450,9 +389,9 @@ class SlackNotifications
 
     /**
      * Occurs after a page has been moved.
-     * @param Title $title The page title object before the move
-     * @param Title $newtitle The page title object after the move
-     * @param User $user The user performing the move
+     * @param LinkTarget $target The page link before the move
+     * @param LinkTarget $newTarget The page link after the move
+     * @param UserIdentity $user The user performing the move
      * @param int $oldid The database ID of the page before the move
      * @param int $newid The database ID of the redirection page or 0 if one wasn't created
      * @param string $reason The reason for the move
@@ -461,18 +400,22 @@ class SlackNotifications
      * @see https://www.mediawiki.org/wiki/Manual:Hooks/TitleMoveComplete
      */
     public static function articleMoved(
-        Title $title,
-        Title $newTitle,
-        User $user,
+        LinkTarget $target,
+        LinkTarget $newTarget,
+        UserIdentity $user,
         $oldId,
         $newId,
         $reason = null,
-        Revision $revision = null
+        RevisionRecord $revision
     ) {
         $config                           = self::getExtConfig();
         $wgSlackIncludePageUrls           = $config->get("SlackIncludePageUrls");
         $wgSlackIncludeUserUrls           = $config->get("SlackIncludeUserUrls");
         $wgSlackNotificationMovedArticle  = $config->get("SlackNotificationMovedArticle");
+
+        $title = Title::newFromLinkTarget($target);
+        $newTitle = Title::newFromLinkTarget($newTarget);
+        $user = User::newFromIdentity($user);
 
         if (
             !$wgSlackNotificationMovedArticle ||
@@ -597,7 +540,7 @@ class SlackNotifications
      * @return void
      * @see http://www.mediawiki.org/wiki/Manual:Hooks/AddNewAccount
      */
-    public static function newUserAccount(User $user, $byEmail)
+    public static function newUserAccount(User $user, bool $autoCreated)
     {
         $config                     = self::getExtConfig();
         $wgSlackShowNewUserIP       = $config->get("SlackShowNewUserIP");
@@ -762,9 +705,9 @@ class SlackNotifications
             "fields"     => array(),
             "ts"         => wfTimestamp(TS_UNIX, $block->mTimestamp),
             "text"       => sprintf(
-                "User was blocked by %s\nReason: %s.",
+                "User was blocked by %s\nReason: _%s_.",
                 self::getSlackUserText($user),
-                $block->mReason ? "_{$block->mReason}_" : "none given"
+                $block->mReason ?? $block->getReasonComment()?->text ?? "none given"
             ),
         );
         $attach[0]["fields"][] = array("title" => "Expiry", "short" => "true", "value" => $block->mExpiry);

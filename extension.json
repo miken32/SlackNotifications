@@ -1,7 +1,7 @@
 {
 	"name": "Slack Notifications",
-	"version": "2.0",
-	"author": "Michael Newton<br/>Based on work by Aleksi Postari",
+	"version": "2.5",
+	"author": "Michael Newton<br/>Based on work by Aleksi Postari and contributors",
 	"url": "https://github.com/miken32/slack_mediawiki",
 	"description": "Sends Slack notifications for selected actions that have occurred in your MediaWiki sites.",
 	"type": "other",
@@ -12,11 +12,10 @@
 		"SlackNotifications": "SlackNotificationsCore.php"
 	},
 	"Hooks": {
-		"PageContentSaveComplete"  : ["SlackNotifications::articleSaved"],
-		"PageContentInsertComplete": ["SlackNotifications::articleInserted"],
-		"ArticleDeleteComplete"    : ["SlackNotifications::articleDeleted"],
-		"TitleMoveComplete"        : ["SlackNotifications::articleMoved"],
-		"AddNewAccount"            : ["SlackNotifications::newUserAccount"],
+		"PageSaveComplete"         : ["SlackNotifications::articleSaved"],
+		"PageDeleteComplete"       : ["SlackNotifications::articleDeleted"],
+		"PageMoveComplete"         : ["SlackNotifications::articleMoved"],
+		"LocalUserCreated"         : ["SlackNotifications::newUserAccount"],
 		"BlockIpComplete"          : ["SlackNotifications::userBlocked"],
 		"UploadComplete"           : ["SlackNotifications::fileUploaded"],
 		"ArticleProtectComplete"   : ["SlackNotifications::articleProtected"]

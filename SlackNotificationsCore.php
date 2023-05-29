@@ -1,5 +1,10 @@
 <?php
 
+namespace RadiusOne\MediaWiki;
+
+use Block;
+use Exception;
+use ManualLogEntry;
 use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\ProperPageIdentity;
@@ -7,6 +12,13 @@ use MediaWiki\Permissions\Authority;
 use MediaWiki\Revision\RevisionRecord;
 use MediaWiki\Storage\EditResult;
 use MediaWiki\User\UserIdentity;
+use MWDebug;
+use SpecialBlock;
+use SpecialContributions;
+use Title;
+use User;
+use UserRightsPage;
+use WikiPage;
 
 class SlackNotifications
 {
@@ -120,9 +132,10 @@ class SlackNotifications
      * Gets nice HTML text for title object containing the link to article page
      * and also into edit, delete and article history pages.
      * @param Title $title The title object of the page
+     * @param bool $actionLinks Whether to include edit, delete, and history links
      * @return string
      */
-    private static function getSlackTitleText(Title $title, $actionLinks = false)
+    private static function getSlackTitleText(Title $title, bool $actionLinks = false)
     {
         if ($actionLinks) {
             return sprintf(
@@ -227,10 +240,21 @@ class SlackNotifications
         return count($spaces) === 0 && count($titles) === 0;
     }
 
-    private static function log(string $message)
+    /**
+     * Log a message to the debug console
+     * @param string $message The message
+     * #param bool $warning When true, emit warning messages to the page as well
+     * @return void
+     * @see https://www.mediawiki.org/wiki/Debugging_toolbar
+     */
+    private static function log(string $message, bool $warning = false)
     {
         MWDebug::init();
-        MWDebug::log($message);
+        if ($warning) {
+            MWDebug::warning($message);
+        } else {
+            MWDebug::log($message);
+        }
     }
 
     /**
@@ -409,7 +433,7 @@ class SlackNotifications
         UserIdentity $user,
         $oldId,
         $newId,
-        $reason = null,
+        $reason,
         RevisionRecord $revision
     ) {
         self::log("Entering SlackNotificationsCore::articleMoved()");

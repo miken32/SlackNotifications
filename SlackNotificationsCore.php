@@ -13,10 +13,12 @@ use MediaWiki\Revision\RevisionRecord;
 use MediaWiki\Storage\EditResult;
 use MediaWiki\User\UserIdentity;
 use MWDebug;
+use RequestContext;
 use SpecialBlock;
 use SpecialContributions;
 use Title;
 use User;
+use UploadBase;
 use UserRightsPage;
 use WikiPage;
 
@@ -648,11 +650,16 @@ class SlackNotifications
         }
 
         $file = $image->getLocalFile();
-        $user = $file->getUser("object");
+        $user = $file->getUploader();
+/*
         if (is_numeric($user)) {
             $user = User::newFromId($user);
         }
-
+        if ( $user === null ) {
+            // TODO check uses and hard deprecate
+            $user = RequestContext::getMain()->getUser();
+        }
+  */
         $message = "A file was uploaded";
         $attach[] = array(
             "fallback"   => sprintf("%s has uploaded %s", $user, $file->getTitle()->getFullText()),
@@ -669,8 +676,9 @@ class SlackNotifications
         );
 
         if (!$file->isExpensiveToThumbnail()) {
-            $thumb_url = $file->getThumbnails()[0];
-            $thumb_file = self::resolveVirtualURL($thumb_url, $file);
+            $src = $file->getThumbnailSource(["physicalWidth" => 120]);
+            error_log(print_r($src,1));
+            $thumb_file = $src["path"] ?? false;
             if ($thumb_file && file_exists($thumb_file)) {
                 $attach[0]["thumb_url"] = sprintf(
                     "data:%s;base64,%s",

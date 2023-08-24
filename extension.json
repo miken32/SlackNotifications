@@ -12,13 +12,13 @@
 		"RadiusOne\\MediaWiki\\SlackNotifications": "SlackNotificationsCore.php"
 	},
 	"Hooks": {
-		"PageSaveComplete"         : ["RadiusOne\\MediaWiki\\SlackNotifications::articleSaved"],
-		"PageDeleteComplete"       : ["RadiusOne\\MediaWiki\\SlackNotifications::articleDeleted"],
-		"PageMoveComplete"         : ["RadiusOne\\MediaWiki\\SlackNotifications::articleMoved"],
-		"LocalUserCreated"         : ["RadiusOne\\MediaWiki\\SlackNotifications::newUserAccount"],
-		"BlockIpComplete"          : ["RadiusOne\\MediaWiki\\SlackNotifications::userBlocked"],
-		"UploadComplete"           : ["RadiusOne\\MediaWiki\\SlackNotifications::fileUploaded"],
-		"ArticleProtectComplete"   : ["RadiusOne\\MediaWiki\\SlackNotifications::articleProtected"]
+		"PageSaveComplete"         : "RadiusOne\\MediaWiki\\SlackNotifications::articleSaved",
+		"PageDeleteComplete"       : "RadiusOne\\MediaWiki\\SlackNotifications::articleDeleted",
+		"PageMoveComplete"         : "RadiusOne\\MediaWiki\\SlackNotifications::articleMoved",
+		"LocalUserCreated"         : "RadiusOne\\MediaWiki\\SlackNotifications::newUserAccount",
+		"BlockIpComplete"          : "RadiusOne\\MediaWiki\\SlackNotifications::userBlocked",
+		"UploadComplete"           : "RadiusOne\\MediaWiki\\SlackNotifications::fileUploaded",
+		"ArticleProtectComplete"   : "RadiusOne\\MediaWiki\\SlackNotifications::articleProtected"
 	},
 	"config": {
 		"SlackIncomingWebhookUrl": "",

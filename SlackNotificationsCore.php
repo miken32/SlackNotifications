@@ -544,7 +544,7 @@ class SlackNotifications
                 "Page had protection %s by %s\nReason: %s",
                 $isProtecting ? "changed" : "removed",
                 self::getSlackUserText($user),
-                $reason ? "_${reason}_" : "none given"
+                $reason ? "_{$reason}_" : "none given"
             ),
         );
 
@@ -593,7 +593,7 @@ class SlackNotifications
             "fallback"   => sprintf("User %s was created", $user),
             "color"      => self::GREEN,
             "title"      => $user,
-            "title_link" => $user->getUserPage->getFullUrl(),
+            "title_link" => $user->getUserPage()->getFullUrl(),
             "text"       => sprintf("New user account was created"),
             "fields"     => array(),
             "ts"         => wfTimestamp(TS_UNIX, $user->getRegistration()),

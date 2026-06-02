@@ -2,25 +2,25 @@
 
 namespace RadiusOne\MediaWiki;
 
-use Block;
 use Exception;
-use ManualLogEntry;
+use MediaWiki\Block\Block;
+use MediaWiki\Context\RequestContext;
+use MediaWiki\Debug\MWDebug;
 use MediaWiki\Linker\LinkTarget;
+use MediaWiki\Logging\ManualLogEntry;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Page\ProperPageIdentity;
+use MediaWiki\Page\WikiPage;
 use MediaWiki\Permissions\Authority;
 use MediaWiki\Revision\RevisionRecord;
+use MediaWiki\Specials\SpecialBlock;
+use MediaWiki\Specials\SpecialContributions;
+use MediaWiki\Specials\SpecialUserRights;
 use MediaWiki\Storage\EditResult;
+use MediaWiki\Title\Title;
+use MediaWiki\User\User;
 use MediaWiki\User\UserIdentity;
-use MWDebug;
-use RequestContext;
-use SpecialBlock;
-use SpecialContributions;
-use Title;
-use User;
 use UploadBase;
-use UserRightsPage;
-use WikiPage;
 
 class SlackNotifications
 {
@@ -80,7 +80,7 @@ class SlackNotifications
     {
         if ($actionLinks) {
             $block   = new SpecialBlock();
-            $rights  = new UserrightsPage();
+            $rights  = new SpecialUserRights();
             $contrib = new SpecialContributions();
             return sprintf(
                 "<%s|block> | <%s|groups> | <%s|talk> | <%s|contribs>",
